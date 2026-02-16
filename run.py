@@ -11,7 +11,7 @@ if __name__ == '__main__':
     R60_80 = ReplacementRule(60, 80)
 
     n_steps = 1000
-    model = SugarScape(GG, ([G1], [M, R60_80]), n_agents=400, seed=42)
+    model = SugarScape(([G1], [M, R60_80]), n_agents=400, seed=42)
     for step in tqdm.tqdm(range(n_steps)):
         model.step()
     fig = visualize_state(model)

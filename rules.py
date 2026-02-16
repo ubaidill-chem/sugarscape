@@ -88,7 +88,7 @@ class AgentRule(Rule):
     def handle_death(self, agent):
         pass
 
-    def validate_genes(self, gene_generator: GeneGenerator):
+    def setup_genes(self, gene_generator: GeneGenerator):
         pass
 
 
@@ -120,7 +120,7 @@ class RuleSet:
 
     def setup_gene_generator(self, gene_generator: GeneGenerator):
         for agent_rule in self.agent_rules:
-            agent_rule.validate_genes(gene_generator)
+            agent_rule.setup_genes(gene_generator)
 
     def handle_death(self, step: int, agent: Ant):
         for agent_rule in self.agent_rules:
@@ -246,7 +246,7 @@ class ReplacementRule(AgentRule):
         super().__init__()
         self.max_age_range = (a, b)
 
-    def validate_genes(self, gene_generator: GeneGenerator):
+    def setup_genes(self, gene_generator: GeneGenerator):
         gene_generator.set_trait("max_age", self.max_age_range)
 
     def handle_death(self, agent):

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Sequence, Any, Callable, Union
+from typing import Literal, Sequence, Any, Callable, Union
 
 import mesa
 import numpy as np
@@ -55,31 +55,38 @@ class Ant(CellAgent):
 
 
 class SugarScape(mesa.Model):
-    def __init__(self, gene_gen: GeneGenerator, rules: tuple[Sequence[ER], Sequence[AR]],
+    def __init__(self, rules: tuple[Sequence[ER], Sequence[AR]], *, 
+                 mode: Literal["norm", "uniform"] = "uniform",
+                 metabolism_rng: tuple[int, int] = (1, 4),
+                 vision_rng: tuple[int, int] = (1, 6),
+                 init_endowment_rng: tuple[int, int] = (5, 25),
                  model_reporters: dict[str, Union[str, Callable[[mesa.Model], Any], list]] = None,
                  agent_reporters: dict[str, Union[str, Callable[[mesa.Model], Any], list]] = None,
-                 *, n_agents=400, seed=None):
+                 n_agents=400, seed=None):
+        
         super().__init__(seed=seed)
         sugar_map = np.loadtxt("sugar-map.txt")
         self.grid = OrthogonalVonNeumannGrid(sugar_map.shape, torus=True, capacity=1, random=self.random)
-        self.gene_gen = gene_gen
+        self.gene_gen = GeneGenerator(mode, metabolism_rng, vision_rng, init_endowment_rng)
         self.n_agents = n_agents
         self.deaths = 0
 
-        sugar_cap = PropertyLayer.from_data("sugar_cap", sugar_map)
-        sugar_level = PropertyLayer.from_data("sugar_level", sugar_map)
-        self.grid.add_property_layer(sugar_cap)
-        self.grid.add_property_layer(sugar_level)
+        self.grid.add_property_layer(PropertyLayer.from_data("sugar_cap", sugar_map))
+        self.grid.add_property_layer(PropertyLayer.from_data("sugar_level", sugar_map))
 
-        model_reporters = model_reporters or {}
-        agent_reporters = agent_reporters or {}
-        model_reporters.update({"population": lambda m: len(m.agents), "gini": self.gini, "deaths": "deaths"})
-        agent_reporters.update({"metabolism": "metabolism", "vision": "vision"})
+        model_reporters, agent_reporters = self.setup_reporters(model_reporters, agent_reporters)
         self.datacollector = mesa.DataCollector(model_reporters, agent_reporters)
 
         self.rules = RuleSet(self, *rules)
         self.rules.setup_gene_generator(self.gene_gen)
         self.generate_ants(self.n_agents)
+
+    def setup_reporters(self, model_reporters, agent_reporters):
+        model_reporters = model_reporters or {}
+        agent_reporters = agent_reporters or {}
+        model_reporters.update({"population": lambda m: len(m.agents), "gini": self.gini, "deaths": "deaths"})
+        agent_reporters.update({"metabolism": "metabolism", "vision": "vision"})
+        return model_reporters,agent_reporters
 
     def generate_ants(self, n_agents):
         Ant.create_agents(self, n_agents, cell=self.random.sample(self.grid.empties.cells, k=n_agents),
