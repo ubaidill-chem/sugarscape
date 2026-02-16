@@ -20,7 +20,7 @@ class GeneGenerator:
     All agents are given some initial endowment of sugar, which they carry with them as they move about the sugarscape
     (p. 24).
     """
-    def __init__(self, mode: Literal["norm", "uniform"] = "uniform", *,
+    def __init__(self, mode: Literal["norm", "uniform"] = "uniform",
                  metabolism_rng: tuple[int, int] = (1, 4),
                  vision_rng: tuple[int, int] = (1, 6),
                  init_endowment_rng: tuple[int, int] = (5, 25)):
@@ -88,7 +88,7 @@ class AgentRule(Rule):
     def handle_death(self, agent):
         pass
 
-    def validate_genes(self, gene_generator: GeneGenerator):
+    def setup_genes(self, gene_generator: GeneGenerator):
         pass
 
 
@@ -120,7 +120,7 @@ class RuleSet:
 
     def setup_gene_generator(self, gene_generator: GeneGenerator):
         for agent_rule in self.agent_rules:
-            agent_rule.validate_genes(gene_generator)
+            agent_rule.setup_genes(gene_generator)
 
     def handle_death(self, step: int, agent: Ant):
         for agent_rule in self.agent_rules:
@@ -246,7 +246,7 @@ class ReplacementRule(AgentRule):
         super().__init__()
         self.max_age_range = (a, b)
 
-    def validate_genes(self, gene_generator: GeneGenerator):
+    def setup_genes(self, gene_generator: GeneGenerator):
         gene_generator.set_trait("max_age", self.max_age_range)
 
     def handle_death(self, agent):

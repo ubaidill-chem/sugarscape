@@ -31,7 +31,7 @@ def plot_map(model: SugarScape, ax: Axes):
     df["sugar"] = model.agents.get('sugar')
 
     sns.scatterplot(df, x='x', y='y', hue='sugar', palette='flare', s=18, ax=ax)
-    ax.set(title=f"Sugar and Agents Map", xticks=[], yticks=[])
+    ax.set(title="Sugar and Agents Map", xticks=[], yticks=[])
     ax.spines["top"].set_visible(True)
     ax.spines["right"].set_visible(True)
     ax.spines["bottom"].set_visible(True)
