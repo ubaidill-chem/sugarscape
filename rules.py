@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Literal, TypeVar, Sequence, Any, TYPE_CHECKING
+from typing import Literal, TypeVar, Sequence, TYPE_CHECKING
 
 import numpy as np
 from mesa.discrete_space import Cell, OrthogonalVonNeumannGrid, OrthogonalMooreGrid
@@ -37,7 +37,7 @@ class GeneGenerator:
     def set_trait(self, trait_name: str, val_range: tuple[int, int]):
         self.trait_ranges[trait_name] = val_range
 
-    def get_random_vals(self, val_range: tuple[int, int], n_agents):
+    def get_random_vals(self, val_range: tuple[int, int], n_agents: int):
         low, high = val_range
         if self.mode == "norm":
             mean = (low + high) / 2
@@ -45,8 +45,10 @@ class GeneGenerator:
             return np.clip(np.round(np.random.normal(mean, std, n_agents)), 1, None)
         elif self.mode == "uniform":
             return np.round(np.random.uniform(low, high, n_agents))
+        else:
+            raise ValueError("Invalid mode")
 
-    def generate_genes(self, n_agents: int = 1) -> dict[str, Sequence[Any]]:
+    def generate_genes(self, n_agents: int = 1) -> dict[str, np.ndarray]:
         gene = {trait: self.get_random_vals(val_range, n_agents) for trait, val_range in self.trait_ranges.items()}
         gene.update({t: np.full(n_agents, vals) for t, vals in self.trait_defaults.items() if t not in gene})
         return gene
@@ -188,6 +190,9 @@ class MovementRule(AgentRule):
     def cell_dist(self, cell1: Cell, cell2: Cell) -> float:
         x1, y1 = cell1.coordinate
         x2, y2 = cell2.coordinate
+        if self.dist_1d is None or self.dist_2d is None:
+            raise ValueError("Distance functions not set. Make sure to bind the rule to a model with a valid grid.")
+
         dx = self.dist_1d(x1, x2, self.width)
         dy = self.dist_1d(y1, y2, self.height)
         return self.dist_2d(dx, dy)
@@ -201,10 +206,11 @@ class MovementRule(AgentRule):
         for cell in ori_cell.get_neighborhood(radius=vision, include_center=True):
             if cell.is_full and cell.coordinate != ori_cell.coordinate:
                 continue
-            if cell.sugar_level > max_sugar:
-                max_sugar = cell.sugar_level
+            cell_sugar = self.model.grid.sugar_level.data[cell.coordinate]
+            if cell_sugar > max_sugar:
+                max_sugar = cell_sugar
                 sugary_dests = [cell]
-            elif cell.sugar_level == max_sugar:
+            elif cell_sugar == max_sugar:
                 sugary_dests.append(cell)
 
         shortest_dist = np.inf
@@ -217,6 +223,8 @@ class MovementRule(AgentRule):
             elif dist == shortest_dist:
                 near_dests.append(cell)
 
+        if ori_cell.random is None:
+            raise ValueError("Cell's random generator is not initialized")
         return ori_cell.random.choice(near_dests)
 
     def sugar_per_dist_find_dest(self, ori_cell: Cell, vision: float) -> Cell:
@@ -226,13 +234,16 @@ class MovementRule(AgentRule):
             if cell.is_full and cell.coordinate != ori_cell.coordinate:
                 continue
             dist = self.cell_dist(ori_cell, cell)
-            sugar_per_dist = cell.sugar_level / dist
+            cell_sugar = self.model.grid.sugar_level.data[cell.coordinate]
+            sugar_per_dist = cell_sugar / dist
             if sugar_per_dist > max_sugar_per_dist:
-                max_sugar_per_dist = cell.sugar_level
+                max_sugar_per_dist = sugar_per_dist
                 destinations = [cell]
             elif sugar_per_dist == max_sugar_per_dist:
                 destinations.append(cell)
 
+        if ori_cell.random is None:
+            raise ValueError("Cell's random generator is not initialized")
         return ori_cell.random.choice(destinations)
 
 

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -38,7 +38,7 @@ def plot_map(model: SugarScape, ax: Axes):
     ax.spines["left"].set_visible(True)
 
 
-def plot_dynamics(data: Union[pd.DataFrame, pd.Series], ax: Axes, title: str = None, ylabel: str = None):
+def plot_dynamics(data: Union[pd.DataFrame, pd.Series], ax: Axes, title: Optional[str] = None, ylabel: Optional[str] = None):
     is_multi = isinstance(data, pd.DataFrame)
     if not is_multi:
         ylabel = ylabel or str(data.name).capitalize()
@@ -52,7 +52,7 @@ def plot_dynamics(data: Union[pd.DataFrame, pd.Series], ax: Axes, title: str = N
         ax.legend()
 
 
-def plot_group_dynamics(data: Union[pd.DataFrame, pd.Series], ax: Axes, title: str = None, ylabel: str = None):
+def plot_group_dynamics(data: Union[pd.DataFrame, pd.Series], ax: Axes, title: Optional[str] = None, ylabel: Optional[str] = None):
     is_multi = isinstance(data, pd.DataFrame)
     if not is_multi:
         ylabel = ylabel or str(data.name).capitalize()
